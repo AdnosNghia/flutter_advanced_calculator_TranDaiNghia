@@ -48,35 +48,42 @@
 
 ### Chế độ Basic
 ```
-[Thêm ảnh: screenshots/basic_mode.png]
+<img width="497" height="1025" alt="{9C10E021-C7C7-4A24-AF88-E9C4B57315CA}" src="https://github.com/user-attachments/assets/f2e83991-906c-4259-9b01-2f5085bf39ac" />
+
 ```
 
 ### Chế độ Scientific
 ```
-[Thêm ảnh: screenshots/scientific_mode.png]
+<img width="496" height="1022" alt="{747DC69F-71F4-4275-92E3-05D9C0FDB768}" src="https://github.com/user-attachments/assets/a11b9ad8-32c5-4832-ac23-1cd79b4feaa5" />
+
 ```
 
 ### Chế độ Programmer (HEX)
 ```
-[Thêm ảnh: screenshots/programmer_mode.png]
+<img width="503" height="1020" alt="{49A01CCC-C23E-409C-A13D-16818054BAEA}" src="https://github.com/user-attachments/assets/9a0e1011-1eac-4783-a405-c02bcf92d071" />
+
 ```
 
 ### Màn hình Cài đặt
 ```
-[Thêm ảnh: screenshots/settings_screen.png]
+<img width="479" height="1025" alt="{46A93125-A420-414B-80C7-4A5A21549F91}" src="https://github.com/user-attachments/assets/b8b4e699-560a-43a0-bb42-a61414ece59d" />
+
 ```
 
 ### Màn hình Lịch sử
 ```
-[Thêm ảnh: screenshots/history_screen.png]
+<img width="503" height="1022" alt="{520A7819-496B-4783-AB19-5A63EC94C8F1}" src="https://github.com/user-attachments/assets/b907c22e-27ec-4be8-ad99-3a4972f89e63" />
+
 ```
 
 ### Giao diện Sáng / Tối
 ```
-[Thêm ảnh: screenshots/light_theme.png]
-[Thêm ảnh: screenshots/dark_theme.png]
-```
+<img width="487" height="1014" alt="{A3C0FB74-5DBD-41E2-933E-0249329954F6}" src="https://github.com/user-attachments/assets/bb77abf3-f7c6-445d-9929-d1e9d6c2e7d6" />
 
+<img width="502" height="1022" alt="{C1832E0F-6B83-4280-A017-FB75FB4E12A9}" src="https://github.com/user-attachments/assets/fea0469e-cd7b-4b84-8174-b64b0e95b824" />
+
+```
+Link Video : https://drive.google.com/file/d/1lsdH9iBje9jYihAmcFhTJ4QLMDEYKzXU/view?usp=sharing
 ---
 
 ## Sơ đồ kiến trúc
