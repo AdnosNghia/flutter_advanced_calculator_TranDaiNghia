@@ -15,7 +15,6 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // --- History ---
   Future<List<CalculationHistory>> loadHistory() async {
     final data = _prefs.getString(_historyKey);
     if (data == null || data.isEmpty) return [];
@@ -34,7 +33,6 @@ class StorageService {
     await _prefs.remove(_historyKey);
   }
 
-  // --- Settings ---
   Future<CalculatorSettings> loadSettings() async {
     final data = _prefs.getString(_settingsKey);
     if (data == null || data.isEmpty) return CalculatorSettings();
@@ -51,7 +49,6 @@ class StorageService {
     await _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
   }
 
-  // --- Memory ---
   Future<double> loadMemory() async {
     return _prefs.getDouble(_memoryKey) ?? 0.0;
   }
@@ -60,7 +57,6 @@ class StorageService {
     await _prefs.setDouble(_memoryKey, value);
   }
 
-  // --- Calculator Mode ---
   Future<int> loadMode() async {
     return _prefs.getInt(_modeKey) ?? 0;
   }

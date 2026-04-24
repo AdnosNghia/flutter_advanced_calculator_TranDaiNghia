@@ -19,14 +19,12 @@ class CalculatorScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: GestureDetector(
-          // Swipe right to delete last character
           onHorizontalDragEnd: (details) {
             if (details.primaryVelocity != null &&
                 details.primaryVelocity! > 200) {
               context.read<CalculatorProvider>().deleteLastCharacter();
             }
           },
-          // Swipe up to open history
           onVerticalDragEnd: (details) {
             if (details.primaryVelocity != null &&
                 details.primaryVelocity! < -200) {
@@ -56,11 +54,10 @@ class CalculatorScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppConstants.screenPadding,
-              vertical: 12,
+              vertical: 8,
             ),
             child: Column(
               children: [
-                // Top bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -106,15 +103,12 @@ class CalculatorScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                const Flexible(child: DisplayArea()),
                 const SizedBox(height: 8),
-                // Display area
-                const DisplayArea(),
-                const SizedBox(height: 16),
-                // Mode selector
                 const ModeSelector(),
-                const SizedBox(height: 12),
-                // Button grid
-                const Expanded(child: ButtonGrid()),
+                const SizedBox(height: 8),
+                const Expanded(flex: 3, child: ButtonGrid()),
               ],
             ),
           ),

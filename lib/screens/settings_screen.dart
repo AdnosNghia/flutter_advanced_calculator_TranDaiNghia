@@ -195,6 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   accentColor: accentColor,
                   onChanged: (val) {
                     setState(() => _settings.hapticFeedback = val);
+                    context.read<CalculatorProvider>().setHapticEnabled(val);
                     _saveSettings();
                   },
                 ),
@@ -209,6 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   accentColor: accentColor,
                   onChanged: (val) {
                     setState(() => _settings.soundEffects = val);
+                    context.read<CalculatorProvider>().setSoundEnabled(val);
                     _saveSettings();
                   },
                 ),

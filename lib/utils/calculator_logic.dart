@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import '../models/calculator_mode.dart';
 
 class CalculatorLogic {
-  /// Calculates factorial of n
   static double factorial(double n) {
     if (n < 0) throw ArgumentError('Factorial of negative number');
     if (n == 0 || n == 1) return 1;
@@ -16,13 +15,10 @@ class CalculatorLogic {
     return result;
   }
 
-  /// Convert degrees to radians
   static double degToRad(double deg) => deg * math.pi / 180;
 
-  /// Convert radians to degrees
   static double radToDeg(double rad) => rad * 180 / math.pi;
 
-  /// Trigonometric functions with angle mode support
   static double sin(double value, AngleMode mode) {
     final rad = mode == AngleMode.degrees ? degToRad(value) : value;
     return math.sin(rad);
@@ -53,7 +49,6 @@ class CalculatorLogic {
     return mode == AngleMode.degrees ? radToDeg(result) : result;
   }
 
-  /// Logarithmic functions
   static double ln(double value) {
     if (value <= 0) throw ArgumentError('Logarithm of non-positive number');
     return math.log(value);
@@ -69,7 +64,6 @@ class CalculatorLogic {
     return math.log(value) / math.ln2;
   }
 
-  /// Power functions
   static double squareRoot(double value) {
     if (value < 0) throw ArgumentError('Square root of negative number');
     return math.sqrt(value);
@@ -84,11 +78,18 @@ class CalculatorLogic {
     return math.pow(base, exponent).toDouble();
   }
 
-  /// Programmer mode: number base conversions
   static String toBase(int value, int base) {
-    if (base == 2) return '0b${value.toRadixString(2).toUpperCase()}';
+    if (base == 2) {
+      String s = value.toRadixString(2).toUpperCase();
+      if (s.length % 4 != 0) s = s.padLeft((s.length / 4).ceil() * 4, '0');
+      return '0b$s';
+    }
     if (base == 8) return '0o${value.toRadixString(8).toUpperCase()}';
-    if (base == 16) return '0x${value.toRadixString(16).toUpperCase()}';
+    if (base == 16) {
+      String s = value.toRadixString(16).toUpperCase();
+      if (s.length % 2 != 0) s = s.padLeft(s.length + 1, '0');
+      return '0x$s';
+    }
     return value.toString();
   }
 
@@ -100,7 +101,6 @@ class CalculatorLogic {
     return int.parse(value);
   }
 
-  /// Bitwise operations
   static int bitwiseAnd(int a, int b) => a & b;
   static int bitwiseOr(int a, int b) => a | b;
   static int bitwiseXor(int a, int b) => a ^ b;
@@ -108,18 +108,15 @@ class CalculatorLogic {
   static int leftShift(int a, int b) => a << b;
   static int rightShift(int a, int b) => a >> b;
 
-  /// Format result based on precision
   static String formatResult(double value, int precision) {
     if (value.isNaN) return 'Error';
     if (value.isInfinite) return value.isNegative ? '-∞' : '∞';
 
-    // If the value is effectively an integer, show without decimals
     if (value == value.truncateToDouble() && value.abs() < 1e15) {
       return value.toInt().toString();
     }
 
     String formatted = value.toStringAsFixed(precision);
-    // Remove trailing zeros
     if (formatted.contains('.')) {
       formatted = formatted.replaceAll(RegExp(r'0+$'), '');
       formatted = formatted.replaceAll(RegExp(r'\.$'), '');

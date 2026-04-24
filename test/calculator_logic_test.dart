@@ -316,5 +316,31 @@ void main() {
         expect(parser.evaluate('sqrt(-1)'), 'Error');
       });
     });
+
+    group('Bitwise Operations', () {
+      test('hex AND: 0xFF&0x0F = 15', () {
+        expect(parser.evaluate('0xFF&0x0F'), '15');
+      });
+
+      test('decimal AND: 255&15 = 15', () {
+        expect(parser.evaluate('255&15'), '15');
+      });
+
+      test('hex OR: 0xF0|0x0F = 255', () {
+        expect(parser.evaluate('0xF0|0x0F'), '255');
+      });
+
+      test('hex literal: 0xFF = 255', () {
+        expect(parser.evaluate('0xFF'), '255');
+      });
+
+      test('hex literal: 0x0F = 15', () {
+        expect(parser.evaluate('0x0F'), '15');
+      });
+
+      test('NOT: ~0 = -1', () {
+        expect(parser.evaluate('~0'), '-1');
+      });
+    });
   });
 }

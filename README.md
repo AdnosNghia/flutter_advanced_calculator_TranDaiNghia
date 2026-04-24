@@ -1,16 +1,260 @@
-# lab3_advanced_calculator
+# Lab 3 - Máy Tính Nâng Cao (Advanced Calculator)
 
-A new Flutter project.
+## Mô tả dự án
 
-## Getting Started
+Ứng dụng Máy tính Nâng cao được xây dựng bằng Flutter, hỗ trợ đa chế độ tính toán: Basic (cơ bản), Scientific (khoa học), và Programmer (lập trình viên). Ứng dụng có giao diện hiện đại với hỗ trợ giao diện Sáng/Tối, lưu trữ dữ liệu cục bộ, và các tương tác cử chỉ nâng cao.
 
-This project is a starting point for a Flutter application.
+### Các tính năng chính
 
-A few resources to get you started if this is your first Flutter project:
+**Chế độ tính toán:**
+- Basic: Phép cộng, trừ, nhân, chia, phần trăm, dấu ngoặc
+- Scientific: sin, cos, tan, asin, acos, atan, log, ln, sqrt, cbrt, lũy thừa, giai thừa, hằng số pi và e
+- Programmer: Chuyển đổi giữa HEX/DEC/OCT/BIN, toán tử bitwise (AND, OR, XOR, NOT, SHL, SHR), nhập số A-F cho hệ 16
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**Lưu trữ dữ liệu:**
+- Lưu lịch sử tính toán (tối đa 50 phép tính gần nhất, tùy chỉnh 25/50/100)
+- Lưu tùy chọn giao diện (Sáng/Tối/Theo hệ thống)
+- Lưu chế độ máy tính và hệ cơ số
+- Lưu giá trị bộ nhớ (M+, M-, MR, MC)
+- Lưu chế độ góc (DEG/RAD)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Hỗ trợ cử chỉ:**
+- Vuốt phải trên màn hình để xóa ký tự cuối
+- Nhấn giữ C để xóa lịch sử
+- Vuốt lên để mở lịch sử
+- Chụm để thay đổi cỡ chữ (0.7x - 1.6x)
+
+**Hoạt ảnh:**
+- Hoạt ảnh nhấn nút với hiệu ứng thu nhỏ (200ms)
+- Hoạt ảnh chuyển đổi chế độ
+- Hiệu ứng mờ dần khi hiển thị kết quả
+- Hoạt ảnh rung khi có lỗi (sử dụng TweenSequence)
+
+**Phản hồi:**
+- Rung nhẹ khi nhấn nút (Haptic Feedback - bật/tắt trong Settings)
+- Âm thanh click khi nhấn nút (Sound Effects - bật/tắt trong Settings)
+
+**Màn hình Cài đặt:**
+- Chọn giao diện: Sáng, Tối, Theo hệ thống
+- Độ chính xác thập phân: 2-10 chữ số thập phân
+- Chế độ góc: Độ (DEG) / Radian (RAD)
+- Kích thước lịch sử: 25/50/100
+- Xóa toàn bộ lịch sử
+
+---
+
+## Ảnh chụp màn hình
+
+
+### Chế độ Basic
+```
+[Thêm ảnh: screenshots/basic_mode.png]
+```
+
+### Chế độ Scientific
+```
+[Thêm ảnh: screenshots/scientific_mode.png]
+```
+
+### Chế độ Programmer (HEX)
+```
+[Thêm ảnh: screenshots/programmer_mode.png]
+```
+
+### Màn hình Cài đặt
+```
+[Thêm ảnh: screenshots/settings_screen.png]
+```
+
+### Màn hình Lịch sử
+```
+[Thêm ảnh: screenshots/history_screen.png]
+```
+
+### Giao diện Sáng / Tối
+```
+[Thêm ảnh: screenshots/light_theme.png]
+[Thêm ảnh: screenshots/dark_theme.png]
+```
+
+---
+
+## Sơ đồ kiến trúc
+
+```
+lib/
+ |-- main.dart                          # Điểm vào ứng dụng, khởi tạo Provider
+ |
+ |-- models/                            # Lớp dữ liệu
+ |   |-- calculator_mode.dart           # Enum: CalculatorMode, AngleMode
+ |   |-- calculator_settings.dart       # Model cài đặt (theme, precision, sound...)
+ |   |-- calculation_history.dart       # Model lịch sử tính toán (JSON serialize)
+ |
+ |-- providers/                         # Quản lý trạng thái (ChangeNotifier + Provider)
+ |   |-- calculator_provider.dart       # Trạng thái chính: biểu thức, kết quả, bộ nhớ, chế độ
+ |   |-- theme_provider.dart            # Quản lý giao diện Sáng/Tối/System
+ |   |-- history_provider.dart          # Quản lý lịch sử tính toán
+ |
+ |-- services/                          # Dịch vụ
+ |   |-- storage_service.dart           # Lưu trữ SharedPreferences (history, settings, memory)
+ |
+ |-- utils/                             # Tiện ích
+ |   |-- expression_parser.dart         # Bộ phân tích biểu thức (recursive descent parser)
+ |   |-- calculator_logic.dart          # Hàm toán học, chuyển đổi cơ số, định dạng kết quả
+ |   |-- constants.dart                 # Hằng số giao diện (màu sắc, kích thước, thời gian)
+ |
+ |-- screens/                           # Màn hình
+ |   |-- calculator_screen.dart         # Màn hình chính của máy tính
+ |   |-- settings_screen.dart           # Màn hình cài đặt
+ |   |-- history_screen.dart            # Màn hình lịch sử đầy đủ
+ |
+ |-- widgets/                           # Widget tái sử dụng
+ |   |-- display_area.dart              # Vùng hiển thị: biểu thức, kết quả, xem trước lịch sử
+ |   |-- button_grid.dart               # Lưới nút: Basic, Scientific, Programmer (A-F, bitwise)
+ |   |-- calculator_button.dart         # Widget nút đơn lẻ với hoạt ảnh scale
+ |   |-- mode_selector.dart             # Thanh chọn chế độ (Basic/Scientific/Programmer)
+
+test/
+ |-- calculator_logic_test.dart         # 75 unit test: toán học, parser, bitwise, chuyển đổi cơ số
+ |-- integration_test.dart              # 21 integration test: button sequence, memory, mode switch
+ |-- widget_test.dart                   # Widget test placeholder
+```
+
+### Luồng dữ liệu
+
+```
+[Người dùng nhấn nút]
+       |
+       v
+CalculatorButton (hoạt ảnh scale, haptic, sound)
+       |
+       v
+ButtonGrid (xác định hành động: appendNumber, appendOperator, calculateResult...)
+       |
+       v
+CalculatorProvider (ChangeNotifier)
+  |-- Quản lý biểu thức (_expression)
+  |-- Gọi ExpressionParser.evaluate()
+  |-- Định dạng kết quả (CalculatorLogic.formatResult / toBase)
+  |-- Lưu lịch sử (HistoryProvider)
+  |-- Lưu bộ nhớ (StorageService)
+       |
+       v
+DisplayArea (hiển thị biểu thức, kết quả, xem trước lịch sử)
+```
+
+### Kiến trúc Provider
+
+```
+MultiProvider
+  |-- CalculatorProvider   # Trạng thái tính toán, bộ nhớ, chế độ, âm thanh
+  |-- ThemeProvider        # Giao diện Sáng/Tối/System
+  |-- HistoryProvider      # Lịch sử tính toán (tối đa 50 mục)
+```
+
+---
+
+## Hướng dẫn cài đặt
+
+### Yêu cầu hệ thống
+- Flutter SDK >= 3.0.0
+- Dart SDK >= 3.0.0
+- Android Studio hoặc VS Code với Flutter plugin
+- Android Emulator hoặc thiết bị thật (Android/iOS)
+
+### Các bước cài đặt
+
+1. Clone repository:
+```bash
+git clone <repository-url>
+cd lab3_advanced_calculator
+```
+
+2. Cài đặt các gói phụ thuộc:
+```bash
+flutter pub get
+```
+
+3. Kiểm tra thiết bị kết nối:
+```bash
+flutter devices
+```
+
+4. Chạy ứng dụng:
+```bash
+flutter run
+```
+
+## Hướng dẫn kiểm thử
+
+### Chạy toàn bộ test
+```bash
+flutter test
+```
+
+### Chạy test theo nhóm
+```bash
+# Chỉ chạy unit test (calculator logic + expression parser)
+flutter test test/calculator_logic_test.dart
+
+# Chỉ chạy integration test (provider + button sequence)
+flutter test test/integration_test.dart
+```
+
+### Chạy test theo tên
+```bash
+# Chỉ chạy test bitwise
+flutter test --plain-name "Bitwise"
+
+# Chỉ chạy test memory
+flutter test --plain-name "Memory"
+```
+
+
+## Hạn chế đã biết
+
+1. **Không hỗ trợ số âm trong Programmer mode**: Các phép toán bitwise chỉ làm việc với số nguyên dương. Số âm có thể cho kết quả không mong muốn do biểu diễn nhị phân bù hai.
+
+2. **Độ chính xác số thập phân**: Sử dụng kiểu `double` của Dart (IEEE 754), nên các phép tính với số thập phân rất lớn hoặc rất nhỏ có thể có sai số làm tròn.
+
+3. **Kích thước số trong Programmer mode**: Không giới hạn kích thước bit (8-bit, 16-bit, 32-bit, 64-bit). Kết quả hiển thị toàn bộ giá trị.
+
+4. **Không hỗ trợ landscape**: Giao diện chỉ được tối ưu cho chế độ dọc (portrait).
+
+5. **Âm thanh nút**: Sử dụng SystemSound.click của hệ thống, không tùy chỉnh được âm thanh riêng.
+
+6. **Không hỗ trợ copy/paste**: Chưa có chức năng sao chép kết quả vào clipboard hoặc dán biểu thức từ clipboard.
+
+---
+
+## Cải tiến trong tương lai
+
+1. **Chế độ Landscape**: Thiết kế giao diện ngang với nhiều nút hơn (mở rộng bàn phím khoa học).
+
+2. **Giới hạn bit trong Programmer mode**: Thêm tùy chọn chọn độ rộng bit (8/16/32/64-bit) để mô phỏng chính xác hơn hành vi overflow.
+
+3. **Copy/Paste**: Hỗ trợ sao chép kết quả và dán biểu thức từ clipboard.
+
+4. **Lịch sử nâng cao**: Tìm kiếm trong lịch sử, lọc theo chế độ, xuất lịch sử ra file.
+
+5. **Widget Calculator**: Tạo widget màn hình chính cho Android để truy cập nhanh.
+
+6. **Hỗ trợ đa ngôn ngữ**: Thêm hỗ trợ tiếng Việt, tiếng Anh, và các ngôn ngữ khác.
+
+7. **Chế độ đồ họa**: Thêm chức năng vẽ đồ thị hàm số (y = f(x)).
+
+8. **Chuyển đổi đơn vị**: Thêm tab chuyển đổi đơn vị (độ dài, khối lượng, nhiệt độ, tiền tệ...).
+
+9. **Âm thanh tùy chỉnh**: Cho phép người dùng chọn âm thanh nút bấm khác nhau.
+
+10. **Xuất/Nhập cài đặt**: Sao lưu và khôi phục cài đặt, lịch sử qua file JSON.
+
+---
+
+## Thông tin tác giả
+
+- **Môn học**: Lập trình Di động Nâng cao
+- **Bài thực hành**: Lab 3 - Ứng dụng Máy tính Nâng cao
+- **Công nghệ**: Flutter, Dart
+- **State Management**: Provider pattern
+- **Lưu trữ**: SharedPreferences

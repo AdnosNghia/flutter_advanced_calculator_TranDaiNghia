@@ -38,7 +38,6 @@ class ButtonGrid extends StatelessWidget {
   }
 }
 
-/// Basic Mode: 4×5 grid
 class _BasicGrid extends StatelessWidget {
   const _BasicGrid({super.key});
 
@@ -64,7 +63,8 @@ class _BasicGrid extends StatelessWidget {
         ? DarkThemeColors.equalButton
         : LightThemeColors.equalButton;
 
-    Widget row(List<Widget> children) => Row(children: children);
+    Widget row(List<Widget> children) =>
+        Expanded(child: Row(children: children));
 
     return Column(
       children: [
@@ -207,7 +207,6 @@ class _BasicGrid extends StatelessWidget {
   }
 }
 
-/// Scientific Mode: 6×6 grid
 class _ScientificGrid extends StatelessWidget {
   const _ScientificGrid({super.key});
 
@@ -236,11 +235,11 @@ class _ScientificGrid extends StatelessWidget {
     final secondBg = isSecond ? opBg : funcBg;
     final secondText = isSecond ? opText : funcText;
 
-    Widget row(List<Widget> children) => Row(children: children);
+    Widget row(List<Widget> children) =>
+        Expanded(child: Row(children: children));
 
     return Column(
       children: [
-        // Row 1: 2nd, sin/asin, cos/acos, tan/atan, ln, log
         row([
           CalculatorButton(
             label: '2nd',
@@ -285,7 +284,6 @@ class _ScientificGrid extends StatelessWidget {
             fontSize: 14,
           ),
         ]),
-        // Row 2: x², √, x^y, (, ), ÷
         row([
           CalculatorButton(
             label: 'x²',
@@ -330,7 +328,6 @@ class _ScientificGrid extends StatelessWidget {
             fontSize: 14,
           ),
         ]),
-        // Row 3: MC, 7, 8, 9, C, ×
         row([
           CalculatorButton(
             label: 'MC',
@@ -371,7 +368,6 @@ class _ScientificGrid extends StatelessWidget {
             textColor: opText,
           ),
         ]),
-        // Row 4: MR, 4, 5, 6, CE, -
         row([
           CalculatorButton(
             label: 'MR',
@@ -412,7 +408,6 @@ class _ScientificGrid extends StatelessWidget {
             textColor: opText,
           ),
         ]),
-        // Row 5: M+, 1, 2, 3, %, +
         row([
           CalculatorButton(
             label: 'M+',
@@ -452,7 +447,6 @@ class _ScientificGrid extends StatelessWidget {
             textColor: opText,
           ),
         ]),
-        // Row 6: M-, ±, 0, ., π, =
         row([
           CalculatorButton(
             label: 'M-',
@@ -500,13 +494,13 @@ class _ScientificGrid extends StatelessWidget {
   }
 }
 
-/// Programmer Mode
 class _ProgrammerGrid extends StatelessWidget {
   const _ProgrammerGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
     final calc = context.read<CalculatorProvider>();
+    final base = context.watch<CalculatorProvider>().currentBase;
     final historyProvider = context.read<HistoryProvider>();
     final isDark = context.watch<ThemeProvider>().isDark;
 
@@ -519,20 +513,48 @@ class _ProgrammerGrid extends StatelessWidget {
     final funcBg = isDark
         ? DarkThemeColors.functionButton
         : LightThemeColors.functionButton;
+    final disabledBg = isDark ? Colors.grey[900]! : Colors.grey[200]!;
     final numText = isDark ? Colors.white : LightThemeColors.buttonText;
     final opText = isDark ? DarkThemeColors.primary : Colors.white;
     final funcText = isDark ? Colors.white : LightThemeColors.buttonText;
+    final disabledText = isDark ? Colors.white24 : Colors.black26;
     final eqBg = isDark
         ? DarkThemeColors.equalButton
         : LightThemeColors.equalButton;
 
-    Widget row(List<Widget> children) => Row(children: children);
+    bool isDigitEnabled(String digit) {
+      final val = int.tryParse(digit, radix: 16) ?? 0;
+      return val < base;
+    }
+
+    Widget hexBtn(String label) {
+      final enabled = isDigitEnabled(label);
+      return CalculatorButton(
+        label: label,
+        onPressed: enabled ? () => calc.appendNumber(label) : () {},
+        backgroundColor: enabled ? funcBg : disabledBg,
+        textColor: enabled ? funcText : disabledText,
+        fontSize: 14,
+      );
+    }
+
+    Widget numBtn(String label) {
+      final enabled = isDigitEnabled(label);
+      return CalculatorButton(
+        label: label,
+        onPressed: enabled ? () => calc.appendNumber(label) : () {},
+        backgroundColor: enabled ? numBg : disabledBg,
+        textColor: enabled ? numText : disabledText,
+      );
+    }
+
+    Widget row(List<Widget> children) =>
+        Expanded(child: Row(children: children));
 
     return Column(
       children: [
-        // Base selector row
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           child: Row(
             children: [
               _baseTab(context, 'HEX', 16, calc),
@@ -542,59 +564,56 @@ class _ProgrammerGrid extends StatelessWidget {
             ],
           ),
         ),
-        // Row 1: AND, OR, XOR, NOT
         row([
           CalculatorButton(
             label: 'AND',
             onPressed: () => calc.appendOperator('&'),
             backgroundColor: funcBg,
             textColor: funcText,
-            fontSize: 13,
+            fontSize: 12,
           ),
           CalculatorButton(
             label: 'OR',
             onPressed: () => calc.appendOperator('|'),
             backgroundColor: funcBg,
             textColor: funcText,
-            fontSize: 13,
+            fontSize: 12,
           ),
           CalculatorButton(
             label: 'XOR',
-            onPressed: () => calc.appendOperator('^'),
+            onPressed: () => calc.appendOperator('^^'),
             backgroundColor: funcBg,
             textColor: funcText,
-            fontSize: 13,
+            fontSize: 12,
           ),
           CalculatorButton(
             label: 'NOT',
             onPressed: () => calc.appendToExpression('~'),
             backgroundColor: funcBg,
             textColor: funcText,
-            fontSize: 13,
+            fontSize: 12,
           ),
-        ]),
-        // Row 2: <<, >>, C, ÷
-        row([
           CalculatorButton(
             label: '<<',
             onPressed: () => calc.appendOperator('<<'),
             backgroundColor: funcBg,
             textColor: funcText,
-            fontSize: 13,
+            fontSize: 12,
           ),
           CalculatorButton(
             label: '>>',
             onPressed: () => calc.appendOperator('>>'),
             backgroundColor: funcBg,
             textColor: funcText,
-            fontSize: 13,
+            fontSize: 12,
           ),
-          CalculatorButton(
-            label: 'C',
-            onPressed: () => calc.clear(),
-            backgroundColor: funcBg,
-            textColor: funcText,
-          ),
+        ]),
+        row([
+          hexBtn('A'),
+          hexBtn('B'),
+          numBtn('7'),
+          numBtn('8'),
+          numBtn('9'),
           CalculatorButton(
             label: '÷',
             onPressed: () => calc.appendOperator('÷'),
@@ -602,26 +621,12 @@ class _ProgrammerGrid extends StatelessWidget {
             textColor: opText,
           ),
         ]),
-        // Number rows
         row([
-          CalculatorButton(
-            label: '7',
-            onPressed: () => calc.appendNumber('7'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
-          CalculatorButton(
-            label: '8',
-            onPressed: () => calc.appendNumber('8'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
-          CalculatorButton(
-            label: '9',
-            onPressed: () => calc.appendNumber('9'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
+          hexBtn('C'),
+          hexBtn('D'),
+          numBtn('4'),
+          numBtn('5'),
+          numBtn('6'),
           CalculatorButton(
             label: '×',
             onPressed: () => calc.appendOperator('×'),
@@ -630,24 +635,11 @@ class _ProgrammerGrid extends StatelessWidget {
           ),
         ]),
         row([
-          CalculatorButton(
-            label: '4',
-            onPressed: () => calc.appendNumber('4'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
-          CalculatorButton(
-            label: '5',
-            onPressed: () => calc.appendNumber('5'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
-          CalculatorButton(
-            label: '6',
-            onPressed: () => calc.appendNumber('6'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
+          hexBtn('E'),
+          hexBtn('F'),
+          numBtn('1'),
+          numBtn('2'),
+          numBtn('3'),
           CalculatorButton(
             label: '-',
             onPressed: () => calc.appendOperator('-'),
@@ -657,20 +649,22 @@ class _ProgrammerGrid extends StatelessWidget {
         ]),
         row([
           CalculatorButton(
-            label: '1',
-            onPressed: () => calc.appendNumber('1'),
-            backgroundColor: numBg,
-            textColor: numText,
+            label: 'CE',
+            onPressed: () => calc.clear(),
+            backgroundColor: funcBg,
+            textColor: funcText,
+            fontSize: 13,
           ),
           CalculatorButton(
-            label: '2',
-            onPressed: () => calc.appendNumber('2'),
-            backgroundColor: numBg,
-            textColor: numText,
+            label: 'C',
+            onPressed: () => calc.clearEntry(),
+            backgroundColor: funcBg,
+            textColor: funcText,
           ),
+          numBtn('0'),
           CalculatorButton(
-            label: '3',
-            onPressed: () => calc.appendNumber('3'),
+            label: '.',
+            onPressed: () => calc.appendDecimal(),
             backgroundColor: numBg,
             textColor: numText,
           ),
@@ -679,27 +673,6 @@ class _ProgrammerGrid extends StatelessWidget {
             onPressed: () => calc.appendOperator('+'),
             backgroundColor: opBg,
             textColor: opText,
-          ),
-        ]),
-        row([
-          CalculatorButton(
-            label: 'CE',
-            onPressed: () => calc.clearEntry(),
-            backgroundColor: funcBg,
-            textColor: funcText,
-            fontSize: 14,
-          ),
-          CalculatorButton(
-            label: '0',
-            onPressed: () => calc.appendNumber('0'),
-            backgroundColor: numBg,
-            textColor: numText,
-          ),
-          CalculatorButton(
-            label: '.',
-            onPressed: () => calc.appendDecimal(),
-            backgroundColor: numBg,
-            textColor: numText,
           ),
           CalculatorButton(
             label: '=',

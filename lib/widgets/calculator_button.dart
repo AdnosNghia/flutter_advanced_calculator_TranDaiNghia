@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/calculator_provider.dart';
 import '../utils/constants.dart';
 
 class CalculatorButton extends StatefulWidget {
@@ -83,8 +85,15 @@ class _CalculatorButtonState extends State<CalculatorButton>
               color: widget.backgroundColor ?? Colors.grey[800],
               borderRadius: BorderRadius.circular(AppConstants.buttonRadius),
               child: InkWell(
+                enableFeedback: false,
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  final calc = context.read<CalculatorProvider>();
+                  if (calc.hapticEnabled) {
+                    HapticFeedback.lightImpact();
+                  }
+                  if (calc.soundEnabled) {
+                    SystemSound.play(SystemSoundType.click);
+                  }
                   widget.onPressed();
                 },
                 onLongPress: widget.onLongPress,
@@ -111,44 +120,5 @@ class _CalculatorButtonState extends State<CalculatorButton>
         ),
       ),
     );
-  }
-}
-
-class AnimatedBuilder extends StatelessWidget {
-  final Animation<double> animation;
-  final Widget Function(BuildContext, Widget?) builder;
-  final Widget? child;
-
-  const AnimatedBuilder({
-    super.key,
-    required this.animation,
-    required this.builder,
-    this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder2(
-      animation: animation,
-      builder: builder,
-      child: child,
-    );
-  }
-}
-
-class AnimatedBuilder2 extends AnimatedWidget {
-  final Widget Function(BuildContext, Widget?) builder;
-  final Widget? child;
-
-  const AnimatedBuilder2({
-    super.key,
-    required Animation<double> animation,
-    required this.builder,
-    this.child,
-  }) : super(listenable: animation);
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, child);
   }
 }

@@ -18,13 +18,13 @@ class CalculatorProvider extends ChangeNotifier {
   int _decimalPrecision = 6;
   bool _isSecondFunction = false;
   bool _hasError = false;
+  bool _soundEnabled = false;
+  bool _hapticEnabled = true;
 
-  // Programmer mode
   int _currentBase = 10;
 
   CalculatorProvider(this._storage);
 
-  // Getters
   String get expression => _expression;
   String get result => _result;
   String get previousExpression => _previousExpression;
@@ -36,12 +36,122 @@ class CalculatorProvider extends ChangeNotifier {
   bool get isSecondFunction => _isSecondFunction;
   bool get hasError => _hasError;
   int get currentBase => _currentBase;
+  bool get soundEnabled => _soundEnabled;
+  bool get hapticEnabled => _hapticEnabled;
+
+  String get displayExpression {
+    if (_mode != CalculatorMode.programmer ||
+        _currentBase == 10 ||
+        _expression.isEmpty) {
+      return _expression;
+    }
+    return _formatProgrammerExpression(
+      _expression,
+      _currentBase,
+      prefixAll: true,
+    );
+  }
+
+  String _formatProgrammerExpression(
+    String expr,
+    int base, {
+    bool prefixAll = true,
+  }) {
+    String prefix;
+    switch (base) {
+      case 16:
+        prefix = '0x';
+        break;
+      case 2:
+        prefix = '0b';
+        break;
+      case 8:
+        prefix = '0o';
+        break;
+      default:
+        return expr;
+    }
+
+    StringBuffer result = StringBuffer();
+    StringBuffer currentNum = StringBuffer();
+
+    for (int i = 0; i < expr.length; i++) {
+      final c = expr[i];
+      final isHexChar =
+          (c.codeUnitAt(0) >= 48 && c.codeUnitAt(0) <= 57) ||
+          (c.codeUnitAt(0) >= 65 && c.codeUnitAt(0) <= 70) ||
+          (c.codeUnitAt(0) >= 97 && c.codeUnitAt(0) <= 102);
+
+      if (isHexChar) {
+        currentNum.write(c);
+      } else {
+        if (currentNum.isNotEmpty) {
+          result.write(prefix);
+          result.write(currentNum);
+          currentNum.clear();
+        }
+        String op = c;
+        if (i + 1 < expr.length) {
+          String twoChar = expr.substring(
+            i,
+            i + 2 > expr.length ? expr.length : i + 2,
+          );
+          if (twoChar == '^^') {
+            op = ' XOR ';
+            i++;
+          } else if (twoChar == '<<') {
+            op = ' SHL ';
+            i++;
+          } else if (twoChar == '>>') {
+            op = ' SHR ';
+            i++;
+          } else if (c == '&') {
+            op = ' AND ';
+          } else if (c == '|') {
+            op = ' OR ';
+          } else if (c == '~') {
+            op = 'NOT ';
+          } else if (c == '×' || c == '÷' || c == '+' || c == '-') {
+            op = ' $c ';
+          }
+        } else {
+          if (c == '&')
+            op = ' AND ';
+          else if (c == '|')
+            op = ' OR ';
+          else if (c == '~')
+            op = 'NOT ';
+          else if (c == '×' || c == '÷' || c == '+' || c == '-')
+            op = ' $c ';
+        }
+        result.write(op);
+      }
+    }
+    if (currentNum.isNotEmpty) {
+      if (prefixAll) result.write(prefix);
+      result.write(currentNum);
+    }
+    return result.toString();
+  }
 
   Future<void> init() async {
     _memoryValue = await _storage.loadMemory();
     _hasMemory = _memoryValue != 0.0;
     final modeIndex = await _storage.loadMode();
     _mode = CalculatorMode.values[modeIndex.clamp(0, 2)];
+    final settings = await _storage.loadSettings();
+    _soundEnabled = settings.soundEffects;
+    _hapticEnabled = settings.hapticFeedback;
+    notifyListeners();
+  }
+
+  void setSoundEnabled(bool val) {
+    _soundEnabled = val;
+    notifyListeners();
+  }
+
+  void setHapticEnabled(bool val) {
+    _hapticEnabled = val;
     notifyListeners();
   }
 
@@ -69,7 +179,6 @@ class CalculatorProvider extends ChangeNotifier {
 
   void setBase(int base) {
     _currentBase = base;
-    // Re-display current value in new base
     if (_result != '0' && _result != 'Error') {
       try {
         int intVal = int.parse(_result);
@@ -100,18 +209,30 @@ class CalculatorProvider extends ChangeNotifier {
 
   void appendOperator(String op) {
     if (_hasError) {
-      // Allow continuing from previous result
       _expression = _result != 'Error' ? _result : '';
       _hasError = false;
     }
     if (_expression.isEmpty && _result != '0' && _result != 'Error') {
       _expression = _result;
     }
-    // Avoid double operators
     if (_expression.isNotEmpty) {
-      final last = _expression[_expression.length - 1];
-      if (['+', '-', '×', '÷', '%'].contains(last)) {
-        _expression = _expression.substring(0, _expression.length - 1);
+      final multiOps = ['^^', '<<', '>>'];
+      bool stripped = false;
+      for (final mop in multiOps) {
+        if (_expression.endsWith(mop)) {
+          _expression = _expression.substring(
+            0,
+            _expression.length - mop.length,
+          );
+          stripped = true;
+          break;
+        }
+      }
+      if (!stripped) {
+        final last = _expression[_expression.length - 1];
+        if (['+', '-', '×', '÷', '%', '&', '|', '^'].contains(last)) {
+          _expression = _expression.substring(0, _expression.length - 1);
+        }
       }
     }
     _expression += op;
@@ -123,7 +244,6 @@ class CalculatorProvider extends ChangeNotifier {
       _expression = '0';
       _hasError = false;
     }
-    // Find the last number segment
     final parts = _expression.split(RegExp(r'[+\-×÷%\(\)]'));
     final lastPart = parts.isNotEmpty ? parts.last : '';
     if (!lastPart.contains('.')) {
@@ -141,7 +261,6 @@ class CalculatorProvider extends ChangeNotifier {
       _expression = '';
       _hasError = false;
     }
-    // Count open and close parentheses
     int openCount = '('.allMatches(_expression).length;
     int closeCount = ')'.allMatches(_expression).length;
 
@@ -182,7 +301,6 @@ class CalculatorProvider extends ChangeNotifier {
 
   void deleteLastCharacter() {
     if (_expression.isNotEmpty) {
-      // Check if the last part is a function name
       final funcPatterns = [
         'sin(',
         'cos(',
@@ -230,9 +348,15 @@ class CalculatorProvider extends ChangeNotifier {
   CalculationHistory? calculateResult() {
     if (_expression.isEmpty) return null;
 
+    String exprToEval = _expression;
+
+    if (_mode == CalculatorMode.programmer && _currentBase != 10) {
+      exprToEval = _addBasePrefixes(_expression, _currentBase);
+    }
+
     final parser = ExpressionParser(angleMode: _angleMode);
     final evalResult = parser.evaluate(
-      _expression,
+      exprToEval,
       precision: _decimalPrecision,
     );
 
@@ -245,9 +369,28 @@ class CalculatorProvider extends ChangeNotifier {
       return null;
     }
 
-    _result = evalResult;
+    if (_mode == CalculatorMode.programmer) {
+      final intVal = double.tryParse(evalResult)?.toInt();
+      if (intVal != null) {
+        _result = CalculatorLogic.toBase(intVal, _currentBase);
+      } else {
+        _result = evalResult;
+      }
+    } else {
+      _result = evalResult;
+    }
+
+    final historyExpr =
+        (_mode == CalculatorMode.programmer && _currentBase != 10)
+        ? _formatProgrammerExpression(
+            _expression,
+            _currentBase,
+            prefixAll: true,
+          )
+        : _expression;
+
     final history = CalculationHistory(
-      expression: _expression,
+      expression: historyExpr,
       result: _result,
       timestamp: DateTime.now(),
       mode: _mode.name,
@@ -257,7 +400,51 @@ class CalculatorProvider extends ChangeNotifier {
     return history;
   }
 
-  // Scientific functions
+  String _addBasePrefixes(String expr, int base) {
+    String prefix;
+    switch (base) {
+      case 16:
+        prefix = '0x';
+        break;
+      case 2:
+        prefix = '0b';
+        break;
+      case 8:
+        prefix = '0o';
+        break;
+      default:
+        return expr;
+    }
+
+    StringBuffer result = StringBuffer();
+    StringBuffer currentNum = StringBuffer();
+
+    for (int i = 0; i < expr.length; i++) {
+      final c = expr[i];
+      final isHexChar =
+          (c.codeUnitAt(0) >= 48 && c.codeUnitAt(0) <= 57) ||
+          (c.codeUnitAt(0) >= 65 && c.codeUnitAt(0) <= 70) ||
+          (c.codeUnitAt(0) >= 97 && c.codeUnitAt(0) <= 102) ||
+          c == '.';
+
+      if (isHexChar) {
+        currentNum.write(c);
+      } else {
+        if (currentNum.isNotEmpty) {
+          result.write(prefix);
+          result.write(currentNum);
+          currentNum.clear();
+        }
+        result.write(c);
+      }
+    }
+    if (currentNum.isNotEmpty) {
+      result.write(prefix);
+      result.write(currentNum);
+    }
+    return result.toString();
+  }
+
   void applyFunction(String funcName) {
     if (_hasError) {
       _expression = '';
@@ -316,9 +503,25 @@ class CalculatorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Memory functions
+  double _getValueForMemory() {
+    if (_expression.isNotEmpty) {
+      final parser = ExpressionParser(angleMode: _angleMode);
+      final evalResult = parser.evaluate(
+        _expression,
+        precision: _decimalPrecision,
+      );
+      if (evalResult != 'Error') {
+        _result = evalResult;
+        _previousExpression = _expression;
+        _expression = '';
+        return double.tryParse(evalResult) ?? 0;
+      }
+    }
+    return double.tryParse(_result) ?? 0;
+  }
+
   void memoryAdd() {
-    double val = double.tryParse(_result) ?? 0;
+    double val = _getValueForMemory();
     _memoryValue += val;
     _hasMemory = true;
     _storage.saveMemory(_memoryValue);
@@ -326,7 +529,7 @@ class CalculatorProvider extends ChangeNotifier {
   }
 
   void memorySubtract() {
-    double val = double.tryParse(_result) ?? 0;
+    double val = _getValueForMemory();
     _memoryValue -= val;
     _hasMemory = _memoryValue != 0;
     _storage.saveMemory(_memoryValue);
@@ -348,7 +551,6 @@ class CalculatorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Programmer mode operations
   void applyBitwiseOp(String op, String secondOperand) {
     try {
       int a = CalculatorLogic.parseBase(_result);

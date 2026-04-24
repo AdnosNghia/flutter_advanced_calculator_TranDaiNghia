@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Light Theme Colors
 class LightThemeColors {
   static const Color primary = Color(0xFF1E1E1E);
   static const Color secondary = Color(0xFF424242);
@@ -15,7 +14,6 @@ class LightThemeColors {
   static const Color equalButton = Color(0xFFFF6B6B);
 }
 
-/// Dark Theme Colors
 class DarkThemeColors {
   static const Color primary = Color(0xFF121212);
   static const Color secondary = Color(0xFF2C2C2C);
@@ -30,7 +28,6 @@ class DarkThemeColors {
   static const Color equalButton = Color(0xFF4ECDC4);
 }
 
-/// Design Constants
 class AppConstants {
   static const double buttonSpacing = 12.0;
   static const double buttonRadius = 16.0;

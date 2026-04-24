@@ -105,7 +105,6 @@ class HistoryScreen extends StatelessWidget {
                   },
                   child: GestureDetector(
                     onTap: () {
-                      // Reuse calculation
                       context.read<CalculatorProvider>().appendToExpression(
                         entry.result,
                       );

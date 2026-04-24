@@ -7,58 +7,74 @@ class ExpressionParser {
 
   ExpressionParser({this.angleMode = AngleMode.degrees});
 
-  /// Main entry: evaluate a mathematical expression string
   String evaluate(String expression, {int precision = 6}) {
     try {
-      // Pre-process the expression
       String processed = _preprocess(expression);
-      // Parse and evaluate using recursive descent
-      final result = _parseExpression(processed, 0);
+      final result = _parseBitwiseOr(processed, 0);
       if (result.pos < processed.length) {
         throw FormatException('Unexpected character at position ${result.pos}');
       }
       return CalculatorLogic.formatResult(result.value, precision);
     } catch (e) {
-      if (e is ArgumentError || e is FormatException) {
-        return 'Error';
-      }
       return 'Error';
     }
   }
 
-  /// Pre-process: handle implicit multiplication, replace symbols
   String _preprocess(String expr) {
     expr = expr.replaceAll(' ', '');
     expr = expr.replaceAll('×', '*');
     expr = expr.replaceAll('÷', '/');
     expr = expr.replaceAll('−', '-');
     expr = expr.replaceAll('π', '(${math.pi})');
-    expr = expr.replaceAll('e', '(${math.e})');
-    // But preserve "exp" and function names containing 'e'
-    expr = expr.replaceAll('sin', 'SIN');
-    expr = expr.replaceAll('cos', 'COS');
-    expr = expr.replaceAll('tan', 'TAN');
+
     expr = expr.replaceAll('asin', 'ASIN');
     expr = expr.replaceAll('acos', 'ACOS');
     expr = expr.replaceAll('atan', 'ATAN');
+    expr = expr.replaceAll('sin', 'SIN');
+    expr = expr.replaceAll('cos', 'COS');
+    expr = expr.replaceAll('tan', 'TAN');
     expr = expr.replaceAll('ln', 'LN');
     expr = expr.replaceAll('log', 'LOG');
     expr = expr.replaceAll('sqrt', 'SQRT');
     expr = expr.replaceAll('cbrt', 'CBRT');
 
-    // Handle implicit multiplication: 2(3) -> 2*(3), )(  -> )*(
+    expr = expr.replaceAllMapped(
+      RegExp(r'(?<![0-9a-fA-Fx])e(?![0-9a-fA-F])'),
+      (m) => '(${math.e})',
+    );
+
     StringBuffer result = StringBuffer();
+    bool inBaseNumber = false;
     for (int i = 0; i < expr.length; i++) {
       result.write(expr[i]);
+
       if (i + 1 < expr.length) {
         final current = expr[i];
         final next = expr[i + 1];
-        // number followed by '(' or letter
+
+        if (current == '0' &&
+            (next == 'x' ||
+                next == 'X' ||
+                next == 'b' ||
+                next == 'B' ||
+                next == 'o' ||
+                next == 'O')) {
+          inBaseNumber = true;
+          continue;
+        }
+
+        if (inBaseNumber) {
+          if (_isHexDigit(next) || _isDigit(next)) {
+            continue;
+          } else {
+            inBaseNumber = false;
+          }
+        }
+
         if ((_isDigit(current) || current == ')') &&
             (next == '(' || _isLetter(next))) {
           result.write('*');
         }
-        // ')' followed by number
         if (current == ')' && (_isDigit(next))) {
           result.write('*');
         }
@@ -69,12 +85,78 @@ class ExpressionParser {
   }
 
   bool _isDigit(String c) => c.codeUnitAt(0) >= 48 && c.codeUnitAt(0) <= 57;
+  bool _isHexDigit(String c) =>
+      _isDigit(c) ||
+      (c.codeUnitAt(0) >= 65 && c.codeUnitAt(0) <= 70) ||
+      (c.codeUnitAt(0) >= 97 && c.codeUnitAt(0) <= 102);
   bool _isLetter(String c) =>
       (c.codeUnitAt(0) >= 65 && c.codeUnitAt(0) <= 90) ||
       (c.codeUnitAt(0) >= 97 && c.codeUnitAt(0) <= 122);
 
-  // Recursive descent parser
-  // Expression = Term (('+' | '-') Term)*
+  _Result _parseBitwiseOr(String expr, int pos) {
+    var result = _parseBitwiseXor(expr, pos);
+    while (result.pos < expr.length && expr[result.pos] == '|') {
+      final right = _parseBitwiseXor(expr, result.pos + 1);
+      result = _Result(
+        (result.value.toInt() | right.value.toInt()).toDouble(),
+        right.pos,
+      );
+    }
+    return result;
+  }
+
+  _Result _parseBitwiseXor(String expr, int pos) {
+    var result = _parseBitwiseAnd(expr, pos);
+    while (result.pos < expr.length) {
+      if (result.pos + 1 < expr.length &&
+          expr.substring(result.pos, result.pos + 2) == '^^') {
+        final right = _parseBitwiseAnd(expr, result.pos + 2);
+        result = _Result(
+          (result.value.toInt() ^ right.value.toInt()).toDouble(),
+          right.pos,
+        );
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  _Result _parseBitwiseAnd(String expr, int pos) {
+    var result = _parseShift(expr, pos);
+    while (result.pos < expr.length && expr[result.pos] == '&') {
+      final right = _parseShift(expr, result.pos + 1);
+      result = _Result(
+        (result.value.toInt() & right.value.toInt()).toDouble(),
+        right.pos,
+      );
+    }
+    return result;
+  }
+
+  _Result _parseShift(String expr, int pos) {
+    var result = _parseExpression(expr, pos);
+    while (result.pos + 1 < expr.length) {
+      final twoChar = expr.substring(result.pos, result.pos + 2);
+      if (twoChar == '<<') {
+        final right = _parseExpression(expr, result.pos + 2);
+        result = _Result(
+          (result.value.toInt() << right.value.toInt()).toDouble(),
+          right.pos,
+        );
+      } else if (twoChar == '>>') {
+        final right = _parseExpression(expr, result.pos + 2);
+        result = _Result(
+          (result.value.toInt() >> right.value.toInt()).toDouble(),
+          right.pos,
+        );
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
   _Result _parseExpression(String expr, int pos) {
     var result = _parseTerm(expr, pos);
     while (result.pos < expr.length) {
@@ -90,7 +172,6 @@ class ExpressionParser {
     return result;
   }
 
-  // Term = Power (('*' | '/') Power)*
   _Result _parseTerm(String expr, int pos) {
     var result = _parsePower(expr, pos);
     while (result.pos < expr.length) {
@@ -109,10 +190,10 @@ class ExpressionParser {
     return result;
   }
 
-  // Power = Unary ('^' Unary)*
   _Result _parsePower(String expr, int pos) {
     var result = _parseUnary(expr, pos);
     while (result.pos < expr.length && expr[result.pos] == '^') {
+      if (result.pos + 1 < expr.length && expr[result.pos + 1] == '^') break;
       final right = _parseUnary(expr, result.pos + 1);
       result = _Result(
         math.pow(result.value, right.value).toDouble(),
@@ -122,7 +203,6 @@ class ExpressionParser {
     return result;
   }
 
-  // Unary = '-' Unary | '+' Unary | Atom
   _Result _parseUnary(String expr, int pos) {
     if (pos < expr.length && expr[pos] == '-') {
       final result = _parseUnary(expr, pos + 1);
@@ -131,12 +211,14 @@ class ExpressionParser {
     if (pos < expr.length && expr[pos] == '+') {
       return _parseUnary(expr, pos + 1);
     }
+    if (pos < expr.length && expr[pos] == '~') {
+      final result = _parseUnary(expr, pos + 1);
+      return _Result((~result.value.toInt()).toDouble(), result.pos);
+    }
     return _parseAtom(expr, pos);
   }
 
-  // Atom = Number | '(' Expression ')' | Function '(' Expression ')' | Factorial
   _Result _parseAtom(String expr, int pos) {
-    // Function call
     for (final func in [
       'ASIN',
       'ACOS',
@@ -152,7 +234,7 @@ class ExpressionParser {
       if (expr.substring(pos).startsWith(func)) {
         int funcEnd = pos + func.length;
         if (funcEnd < expr.length && expr[funcEnd] == '(') {
-          final inner = _parseExpression(expr, funcEnd + 1);
+          final inner = _parseBitwiseOr(expr, funcEnd + 1);
           if (inner.pos >= expr.length || expr[inner.pos] != ')') {
             throw FormatException('Missing closing parenthesis');
           }
@@ -197,14 +279,12 @@ class ExpressionParser {
       }
     }
 
-    // Parentheses
     if (pos < expr.length && expr[pos] == '(') {
-      final result = _parseExpression(expr, pos + 1);
+      final result = _parseBitwiseOr(expr, pos + 1);
       if (result.pos >= expr.length || expr[result.pos] != ')') {
         throw FormatException('Missing closing parenthesis');
       }
       var atomResult = _Result(result.value, result.pos + 1);
-      // Check for factorial after parentheses
       if (atomResult.pos < expr.length && expr[atomResult.pos] == '!') {
         atomResult = _Result(
           CalculatorLogic.factorial(atomResult.value),
@@ -214,7 +294,54 @@ class ExpressionParser {
       return atomResult;
     }
 
-    // Number
+    if (pos + 1 < expr.length &&
+        expr[pos] == '0' &&
+        (expr[pos + 1] == 'x' || expr[pos + 1] == 'X')) {
+      int hexStart = pos + 2;
+      int hexEnd = hexStart;
+      while (hexEnd < expr.length && _isHexDigit(expr[hexEnd])) {
+        hexEnd++;
+      }
+      if (hexEnd == hexStart) {
+        throw FormatException('Invalid hex literal');
+      }
+      int hexVal = int.parse(expr.substring(hexStart, hexEnd), radix: 16);
+      return _Result(hexVal.toDouble(), hexEnd);
+    }
+
+    if (pos + 1 < expr.length &&
+        expr[pos] == '0' &&
+        (expr[pos + 1] == 'b' || expr[pos + 1] == 'B')) {
+      int binStart = pos + 2;
+      int binEnd = binStart;
+      while (binEnd < expr.length &&
+          (expr[binEnd] == '0' || expr[binEnd] == '1')) {
+        binEnd++;
+      }
+      if (binEnd == binStart) {
+        throw FormatException('Invalid binary literal');
+      }
+      int binVal = int.parse(expr.substring(binStart, binEnd), radix: 2);
+      return _Result(binVal.toDouble(), binEnd);
+    }
+
+    if (pos + 1 < expr.length &&
+        expr[pos] == '0' &&
+        (expr[pos + 1] == 'o' || expr[pos + 1] == 'O')) {
+      int octStart = pos + 2;
+      int octEnd = octStart;
+      while (octEnd < expr.length &&
+          expr[octEnd].codeUnitAt(0) >= 48 &&
+          expr[octEnd].codeUnitAt(0) <= 55) {
+        octEnd++;
+      }
+      if (octEnd == octStart) {
+        throw FormatException('Invalid octal literal');
+      }
+      int octVal = int.parse(expr.substring(octStart, octEnd), radix: 8);
+      return _Result(octVal.toDouble(), octEnd);
+    }
+
     int start = pos;
     while (pos < expr.length && (_isDigit(expr[pos]) || expr[pos] == '.')) {
       pos++;
@@ -224,7 +351,6 @@ class ExpressionParser {
     }
     double value = double.parse(expr.substring(start, pos));
 
-    // Check for factorial
     if (pos < expr.length && expr[pos] == '!') {
       value = CalculatorLogic.factorial(value);
       pos++;
